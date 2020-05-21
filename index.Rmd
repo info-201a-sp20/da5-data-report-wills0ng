@@ -38,6 +38,7 @@ This interactive map displays locations of incidents in the United States with t
 ```{r mapvisualization}
 library("leaflet")
 
+# Make leaflet map visualization
 leaflet(data = shootings) %>%
   addProviderTiles("CartoDB.Positron") %>%
   addCircles(
@@ -65,10 +66,12 @@ Do certain times of the years have more shootings?
 ```{r dateplot}
 library(ggplot2)
 
+# First aggregate the number of shootings per month
 shootings_by_month <- shootings %>%
   group_by(month_number) %>%
   summarize(num_shootings = n())
 
+# Make bar chart using ggplot2
 ggplot(data = shootings_by_month) +
   geom_col(mapping = aes(x = month_number, y = num_shootings)) +
   labs(title = "Number of shootings per month",
