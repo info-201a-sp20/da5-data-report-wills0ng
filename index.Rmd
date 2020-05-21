@@ -1,0 +1,79 @@
+---
+title: "a5-data-report"
+author: "Will Song"
+date: "5/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+source("analysis.R")
+```
+
+## Abstract
+In this report, we work with the [crowdsourced](https://www.gunviolencearchive.org/reports/mass-shooting) `shootings-2018.csv` dataset, which contains data about mass shootings in 2018. Each observation in the data represents a single shooting event, and we have the following variables in the data:
+
+```
+`r column_names`
+```
+
+At a high level, we find that a total of `r num_shootings` shootings occured in 2018, with `r tot_killed` lives lost. Notably, the most impacted city, state, and month were `r most_impacted_city`, `r most_impacted_state` and `r most_impacted_month`, respectively.
+
+## Summary Table
+
+To understand how severely the most impacted city was affected, we compare it to the top 5 most impacted cities by casualties. The `diff` column shows the difference in casualties between the each city and the city with the next highest casualties, and the `factor` column shows by what factor.
+
+```{r tables}
+knitr::kable(top_5_cities, caption = "Top 5 cities by number of casualties")
+```
+
+We can see that `r most_impacted_city` had `r top_diff` more casualties than the next most impacted city, which represents a factor of `r top_factor`.
+
+## An Incident Close to Home
+In this section we dive deeper into an incident that hits close to home. This particular incident occurred on `r selected_incident$date` in `r selected_incident$city`, `r selected_incident$state` at `r selected_incident$address`. The number of casualties involved were `r selected_incident$num_killed` deaths and `r selected_incident$num_injured` injuries. Further information on the incident is reported on [Komo News](https://komonews.com/news/local/1-dead-others-wounded-in-skyway-shooting). The incident is still an ongoing investigation, if you have further information, please report to the proper authorities.
+
+## An Interactive Map displaying Location of Incidents
+This interactive map displays locations of incidents in the United States with the size of the incident increasing according to the magnitude of casualties. Here, we can try to identify potential clusers, differences in number of incidences and the size of incidences in different regions.
+
+```{r mapvisualization}
+library("leaflet")
+
+leaflet(data = shootings) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addCircles(
+    lat = ~lat,
+    lng = ~long,
+    # Display the address (incl. city)
+    # and number of killed/injured
+    # in a pop up on click
+    popup = ~paste0("Address: ", address, ", ", city,
+                    "<br>Killed: ", num_killed,
+                    "<br>Injured: ", num_injured),
+    # Make the radius the number of casualties
+    # Exponentiate it to make the size differences more apparent
+    radius = ~(num_casualties)^3.2
+  )
+```
+
+If you take a close look and zoom in on Florida, you can find that there is a dot that is significantly larger than the other dots of incidents in the United States. When highlighting the dot, you will find that there are 17 Killed and 17 Injured, which was the highest reported casuality in a U.S city in 2018.
+
+Another interesting fact is that a majority of hotspots where incidents occurred are located in the East Coast through parts of the Mid-West. Comparing the number of incidents to the West Coast, there are far fewer incidents in 2018. You can also observe clusters along the coasts.
+
+## A Bar Chart of number of Shootings per Month
+One interesting question to answer is how the number of shooting incidents vary by month across the year.
+Do certain times of the years have more shootings?
+```{r dateplot}
+library(ggplot2)
+
+shootings_by_month <- shootings %>%
+  group_by(month_number) %>%
+  summarize(num_shootings = n())
+
+ggplot(data = shootings_by_month) +
+  geom_col(mapping = aes(x = month_number, y = num_shootings)) +
+  labs(title = "Number of shootings per month",
+       x = "Month",
+       y = "Number of shootings")
+```
+
+In the bar plot above, you can see that in months 06 and 07 (June and July, respectively) have higher incidents of shootings compared to the other months of the year. A second observation is that the number of shootings starting from June tapers off after July, and goes lower closer to Winter. I'd like to share a **spurious correlation** that has been discussed in classrooms for years, that is, how there is a strong positive correlation between ice cream sales and homicide rates. When ice cream sales rise, so does homicides. Both ice cream sales and crime rates soar in the summer, but the two variables are completely unrelated to one another.
